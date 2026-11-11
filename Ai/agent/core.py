@@ -46,12 +46,12 @@ class ShreyAgent:
         self._initialize_graph()
 
     def _initialize_graph(self):
-        """Build and compile the LangGraph ReAct agent graph."""
+        """Build and compile the LangGraph ReAct agent graph with explicit SystemMessage."""
         llm = get_llm(provider=self.provider)
         self._compiled_graph = create_react_agent(
             model=llm,
             tools=self.tools,
-            prompt=self.system_prompt,
+            prompt=SystemMessage(content=self.system_prompt),
             checkpointer=self.memory
         )
 
@@ -61,13 +61,43 @@ class ShreyAgent:
         Takes text input, executes any necessary tools, and returns a structured output.
         """
         config = {"configurable": {"thread_id": input_data.thread_id}}
-        inputs = {"messages": [HumanMessage(content=input_data.text)]}
+
+        # Ensure SystemMessage is explicitly seeded for new conversational threads
+        try:
+            state = self._compiled_graph.get_state(config)
+            existing_messages = state.values.get("messages", []) if state and state.values else []
+        except Exception:
+            existing_messages = []
+
+        if not existing_messages or not any(isinstance(m, SystemMessage) for m in existing_messages):
+            message_payload = [
+                SystemMessage(content=self.system_prompt),
+                HumanMessage(content=input_data.text)
+            ]
+        else:
+            message_payload = [HumanMessage(content=input_data.text)]
+
+        inputs = {"messages": message_payload}
 
         try:
             result = self._compiled_graph.invoke(inputs, config=config)
             messages = result.get("messages", [])
             final_message = messages[-1] if messages else None
-            response_text = final_message.content if final_message else "I was unable to formulate a response."
+            raw_content = final_message.content if final_message else "I was unable to formulate a response."
+
+            # Normalize response_text if the LLM (like Gemini) returns a list of parts
+            if isinstance(raw_content, list):
+                text_parts = []
+                for part in raw_content:
+                    if isinstance(part, str):
+                        text_parts.append(part)
+                    elif isinstance(part, dict) and "text" in part:
+                        text_parts.append(part["text"])
+                    elif hasattr(part, "text"):
+                        text_parts.append(part.text)
+                response_text = "\n".join(text_parts)
+            else:
+                response_text = str(raw_content)
 
             # Extract any tools invoked during the ReAct loop
             tools_used = []

@@ -23,11 +23,11 @@ def get_llm(provider: str = None) -> BaseChatModel:
             temperature=0.7
         )
 
-    # 2. OpenRouter (Using free models like meta-llama/llama-3.3-70b-instruct:free)
+    # 2. OpenRouter (Using dynamic free router openrouter/free)
     openrouter_key = os.getenv("OPENROUTER_API_KEY")
     if (provider == "openrouter" or not provider) and openrouter_key:
         from langchain_openai import ChatOpenAI
-        model = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.3-70b-instruct:free")
+        model = os.getenv("OPENROUTER_MODEL", "openrouter/free")
         return ChatOpenAI(
             base_url="https://openrouter.ai/api/v1",
             api_key=openrouter_key,
@@ -37,15 +37,16 @@ def get_llm(provider: str = None) -> BaseChatModel:
             max_retries=2
         )
 
-    # 3. Gemini (Using gemini-3.8-flash)
+    # 3. Gemini (Using fast, reliable gemini-3.5-flash-lite or gemini-3.8-flash)
     gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
     if (provider == "gemini" or not provider) and gemini_key:
         from langchain_google_genai import ChatGoogleGenerativeAI
-        model = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+        model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
         return ChatGoogleGenerativeAI(
             google_api_key=gemini_key,
             model=model,
-            temperature=0.7
+            temperature=0.7,
+            timeout=90
         )
 
     # Fallback to OpenRouter if key is present
@@ -54,7 +55,7 @@ def get_llm(provider: str = None) -> BaseChatModel:
         return ChatOpenAI(
             base_url="https://openrouter.ai/api/v1",
             api_key=openrouter_key,
-            model=os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.3-70b-instruct:free"),
+            model=os.getenv("OPENROUTER_MODEL", "openrouter/free"),
             temperature=0.7
         )
 
