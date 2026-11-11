@@ -73,3 +73,4 @@ class RagPipeline:
             return output
         except Exception:
             return []
+

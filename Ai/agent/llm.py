@@ -16,7 +16,7 @@ def get_llm(provider: str = None) -> BaseChatModel:
     groq_key = os.getenv("GROQ_API_KEY")
     if (provider == "groq" or not provider) and groq_key:
         from langchain_groq import ChatGroq
-        model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+        model = os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b")
         return ChatGroq(
             api_key=groq_key,
             model_name=model,
@@ -37,11 +37,11 @@ def get_llm(provider: str = None) -> BaseChatModel:
             max_retries=2
         )
 
-    # 3. Gemini
+    # 3. Gemini (Using gemini-3.8-flash)
     gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
-    if gemini_key:
+    if (provider == "gemini" or not provider) and gemini_key:
         from langchain_google_genai import ChatGoogleGenerativeAI
-        model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+        model = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
         return ChatGoogleGenerativeAI(
             google_api_key=gemini_key,
             model=model,

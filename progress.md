@@ -12,7 +12,7 @@
 |---|---|:---:|---|
 | **Phase 1** | **Project Setup & Environment** | ✅ **DONE** | Java 21, Maven, Node.js, Electron scaffold, Git repo initialization |
 | **Phase 2** | **Backend Auth & Gateway** | ✅ **DONE** | Spring Boot 3.3.5, JWT, MongoDB Atlas, Blacklisting, Rate Limits, 20 API Routes |
-| **Phase 3** | **AI Service (FastAPI)** | ✅ **CORE READY** | UV, Python 3.11, LangGraph ReAct Agent, Claude-Code Prompts, Tavily Search, Desktop Tools |
+| **Phase 3** | **AI Service (FastAPI)** | ✅ **DONE & VERIFIED** | LangGraph ReAct Agent, 18 Desktop/Web Tools, ChromaDB ONNX RAG, Chat & RAG Pipelines |
 | **Phase 4** | **Frontend UI & Voice (Electron)** | 🔄 **IN PROGRESS** | React + Vite, Ace Design System tokens, Voice Button, Chromium STT/TTS |
 | **Phase 5** | **Full Integration & Packaging** | ⏳ **PENDING** | End-to-end voice chat, `electron-builder` Windows installer |
 
@@ -85,34 +85,56 @@ All 20 endpoints tested against MongoDB Atlas via automated test runner [`backen
 - [x] **[`report.md`](file:///c:/Users/Dell/Desktop/projects/shrey_Ai/report.md)**: Live verification report detailing performance across all 20 tested endpoints.
 - [x] **[`PLAN.md`](file:///c:/Users/Dell/Desktop/projects/shrey_Ai/PLAN.md)**: Master project architecture and design document.
 
-### 8. AI Service & Agent Core (`Ai/`)
-- [x] Installed standalone **`uv`** and provisioned **CPython 3.11.18** virtual environment in `Ai/.venv`.
-- [x] Installed all 158 production packages (`fastapi`, `uvicorn`, `langchain`, `langgraph`, `google-genai`, `langchain-groq`, `langchain-openai`, `tavily-python`, `chromadb`, `sentence-transformers`, `pyautogui`, `psutil`).
-- [x] **Claude-Code Grade System Prompt Architecture ([`Ai/agent/prompts.py`](file:///c:/Users/Dell/Desktop/projects/shrey_Ai/Ai/agent/prompts.py)):**
+### 8. AI Service & Agent Core (`Ai/`) — 100% Verified
+- [x] Installed standalone **`uv`** package manager and provisioned **CPython 3.11.18** in `Ai/.venv`.
+- [x] Removed bulky `sentence-transformers` & `torch`, migrating to ChromaDB's built-in ONNX runtime for lightweight vector embeddings.
+- [x] **Claude-Code Grade System Prompt ([`Ai/agent/prompts.py`](file:///c:/Users/Dell/Desktop/projects/shrey_Ai/Ai/agent/prompts.py)):**
   - **Persona:** Shrey AI, elite desktop companion.
   - **Creators:** Explicitly and warmly credits **Aryan, Arpit, and Ashutosh**.
   - **Dual Modality:** Natural conversational speech for STT/TTS and structured markdown for text chat.
   - **Live Search Mandate:** Proactively executes Tavily search on current events or time-sensitive queries.
-- [x] **Agent Tools Suite ([`Ai/agent/tools.py`](file:///c:/Users/Dell/Desktop/projects/shrey_Ai/Ai/agent/tools.py)):**
-  - `tavily_search`: Real-time web search with titles, snippets, and source URLs.
-  - `get_system_info`: CPU, RAM, disk storage, and battery telemetry via `psutil`.
-  - `clipboard_read` & `clipboard_write`: Windows clipboard inspection and copying via `pyperclip`.
-  - `take_screenshot`: Full-screen capture saved locally via `pyautogui`.
-  - `read_local_file`: Safe local file reading.
-- [x] **LangGraph ReAct Agent ([`Ai/agent/graph.py`](file:///c:/Users/Dell/Desktop/projects/shrey_Ai/Ai/agent/graph.py)):**
-  - Multi-provider dynamic LLM loader (Groq, OpenRouter, Gemini).
-  - Conversational persistence using `MemorySaver` checkpointer.
-- [x] **FastAPI Application ([`Ai/main.py`](file:///c:/Users/Dell/Desktop/projects/shrey_Ai/Ai/main.py)):**
-  - Endpoints: `POST /ai/chat`, `GET /health`, `GET /ai/status`, `GET /`.
-- [x] **Spring Boot AI Proxy Gateway ([`AiProxyController.java`](file:///c:/Users/Dell/Desktop/projects/shrey_Ai/backend/src/main/java/com/shreyai/controller/AiProxyController.java)):**
-  - Reverse proxies `POST /api/ai/chat` to FastAPI `:8000/ai/chat` with JWT verification, Bucket4j rate limits, and audit logs.
+- [x] **Comprehensive Suite of 18 Agent Tools ([`Ai/agent/tools.py`](file:///c:/Users/Dell/Desktop/projects/shrey_Ai/Ai/agent/tools.py)):**
+  - **Web & Live Data (Free / Zero-Key):** `tavily_search`, `fetch_web_page`, `get_weather`, `get_crypto_prices`, `get_hacker_news_stories`, `open_in_browser`.
+  - **Desktop & OS Automation:** `launch_application`, `media_control`, `lock_workstation`, `create_desktop_note`, `empty_recycle_bin`.
+  - **Diagnostics & Process Management:** `get_system_info`, `list_running_processes`, `kill_process`.
+  - **Clipboard & Screen:** `clipboard_read`, `clipboard_write`, `take_screenshot`, `read_local_file`.
+- [x] **Class-Based Architecture ([`Ai/agent/core.py`](file:///c:/Users/Dell/Desktop/projects/shrey_Ai/Ai/agent/core.py)):**
+  - Built `ShreyAgent` class wrapping LangGraph ReAct agent, MemorySaver checkpointer, and speech-cleaning utilities.
+- [x] **Class-Based Pipelines ([`Ai/pipeline/`](file:///c:/Users/Dell/Desktop/projects/shrey_Ai/Ai/pipeline/)):**
+  - **`ChatPipeline`**: Sanitizes inputs, manages agent routing, and returns dual-modality output (`response` + `voice_script`).
+  - **`RagPipeline`**: Text chunking, ONNX vector embedding, and ChromaDB similarity search.
+- [x] **Automated Test Suite ([`Ai/test_ai_endpoints.py`](file:///c:/Users/Dell/Desktop/projects/shrey_Ai/Ai/test_ai_endpoints.py)):**
+  - Verified 100% passing across all 6 microservice routes: `GET /`, `GET /health`, `GET /ai/status`, `POST /ai/rag/ingest`, `POST /ai/rag/query`, and `POST /ai/chat`.
+  - Live query verified: Shrey AI correctly responded with creators **Aryan, Arpit, and Ashutosh**.
+  - Live tool execution verified: Agent autonomously executed `get_system_info` tool and returned live CPU, RAM, disk, and battery analysis.
+- [x] **Documentation Created ([`Ai/api.md`](file:///c:/Users/Dell/Desktop/projects/shrey_Ai/Ai/api.md)):** Complete microservice API reference, request/response models, and Axios TypeScript client.
+
+### 9. How to Run the Services
+
+#### 1. Start AI Service (Port 8000)
+```powershell
+cd c:\Users\Dell\Desktop\projects\shrey_Ai\Ai
+.\.venv\Scripts\uvicorn.exe main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+#### 2. Start Spring Boot Backend (Port 8080)
+```powershell
+cd c:\Users\Dell\Desktop\projects\shrey_Ai\backend
+c:\Users\Dell\Desktop\projects\shrey_Ai\apache-maven-3.9.9\bin\mvn.cmd spring-boot:run
+```
+
+#### 3. Start Electron Frontend (Port 5173 / Electron Window)
+```powershell
+cd c:\Users\Dell\Desktop\projects\shrey_Ai\frontend
+npm run dev
+```
 
 ---
 
 ## 🎯 Next Steps
 
-1. **Frontend Authentication & Chat Wiring**:
-   - Connect the React client (Login, Register, Profile, Voice Chat) in `frontend/` to the backend routes documented in [`backend/api.md`](file:///c:/Users/Dell/Desktop/projects/shrey_Ai/backend/api.md).
+1. **Frontend Authentication & Chat UI Wiring**:
+   - Connect the React client (Login, Register, Voice Chat) in `frontend/` to the backend routes documented in [`backend/api.md`](file:///c:/Users/Dell/Desktop/projects/shrey_Ai/backend/api.md) and [`Ai/api.md`](file:///c:/Users/Dell/Desktop/projects/shrey_Ai/Ai/api.md).
 2. **Voice Integration**:
-   - Chromium built-in `SpeechRecognition` (STT) and `speechSynthesis` (TTS) in Electron, plus Gemini voice streaming option.
+   - Connect the animated `VoiceButton` to Chromium's built-in `SpeechRecognition` (STT) and `speechSynthesis` (TTS) in Electron.
 

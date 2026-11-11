@@ -6,3 +6,4 @@ from pipeline.chat_pipeline import ChatPipeline, ChatPipelineRequest, ChatPipeli
 from pipeline.rag_pipeline import RagPipeline
 
 __all__ = ["ChatPipeline", "ChatPipelineRequest", "ChatPipelineResponse", "RagPipeline"]
+

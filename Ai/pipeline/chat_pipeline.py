@@ -73,3 +73,4 @@ class ChatPipeline:
             provider=agent_output.provider,
             status=agent_output.status
         )
+
