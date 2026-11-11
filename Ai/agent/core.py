@@ -20,6 +20,7 @@ class AgentInput(BaseModel):
     text: str = Field(..., description="User prompt or transcribed voice input")
     thread_id: str = Field("default", description="Conversation thread session identifier")
     provider: Optional[str] = Field(None, description="Preferred LLM provider: groq, openrouter, or gemini")
+    history: Optional[List[Dict[str, str]]] = Field(default=None, description="Prior conversational turns for persistent memory")
 
 
 class AgentOutput(BaseModel):
@@ -62,7 +63,7 @@ class ShreyAgent:
         """
         config = {"configurable": {"thread_id": input_data.thread_id}}
 
-        # Ensure SystemMessage is explicitly seeded for new conversational threads
+        # Ensure SystemMessage and any passed persistent history are explicitly seeded
         try:
             state = self._compiled_graph.get_state(config)
             existing_messages = state.values.get("messages", []) if state and state.values else []
@@ -70,10 +71,17 @@ class ShreyAgent:
             existing_messages = []
 
         if not existing_messages or not any(isinstance(m, SystemMessage) for m in existing_messages):
-            message_payload = [
-                SystemMessage(content=self.system_prompt),
-                HumanMessage(content=input_data.text)
-            ]
+            message_payload = [SystemMessage(content=self.system_prompt)]
+            if input_data.history:
+                for h in input_data.history:
+                    r = h.get("role", "user")
+                    c = h.get("content", "")
+                    if c:
+                        if r == "user":
+                            message_payload.append(HumanMessage(content=c))
+                        elif r == "assistant":
+                            message_payload.append(AIMessage(content=c))
+            message_payload.append(HumanMessage(content=input_data.text))
         else:
             message_payload = [HumanMessage(content=input_data.text)]
 

@@ -37,6 +37,7 @@ class ChatRequest(BaseModel):
     thread_id: Optional[str] = Field("default", description="Conversation session ID for memory")
     provider: Optional[str] = Field(None, description="Preferred provider: groq, openrouter, or gemini")
     include_voice_script: bool = Field(True, description="Whether to include TTS-ready text")
+    history: Optional[List[Dict[str, str]]] = Field(default=None, description="Prior conversation turns for persistent memory")
 
 
 class IngestRequest(BaseModel):
@@ -103,7 +104,8 @@ def chat_endpoint(req: ChatRequest):
             message=req.message,
             thread_id=req.thread_id or "default",
             provider=req.provider,
-            include_voice_script=req.include_voice_script
+            include_voice_script=req.include_voice_script,
+            history=req.history
         )
         return chat_pipeline.execute(pipeline_req)
     except Exception as e:

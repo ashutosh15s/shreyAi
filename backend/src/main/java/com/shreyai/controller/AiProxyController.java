@@ -1,8 +1,12 @@
 package com.shreyai.controller;
 
 import com.shreyai.dto.ApiResponse;
+import com.shreyai.dto.CreateConversationRequest;
+import com.shreyai.model.ChatMessage;
+import com.shreyai.model.Conversation;
 import com.shreyai.security.CustomUserDetails;
 import com.shreyai.service.AuditLogService;
+import com.shreyai.service.ChatService;
 import com.shreyai.service.RateLimitService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -13,7 +17,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestClient;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -22,16 +28,19 @@ public class AiProxyController {
 
     private final RateLimitService rateLimitService;
     private final AuditLogService auditLogService;
+    private final ChatService chatService;
     private final RestClient restClient;
     private final String aiServiceUrl;
 
     public AiProxyController(
             RateLimitService rateLimitService,
             AuditLogService auditLogService,
+            ChatService chatService,
             @Value("${ai.service.url:http://localhost:8000}") String aiServiceUrl
     ) {
         this.rateLimitService = rateLimitService;
         this.auditLogService = auditLogService;
+        this.chatService = chatService;
         this.aiServiceUrl = aiServiceUrl;
 
         // Configure request factory with ample timeout for agentic tool reasoning & LLM calls
@@ -47,7 +56,8 @@ public class AiProxyController {
 
     /**
      * Proxy conversational chat request to FastAPI downstream.
-     * Enforces per-user per-provider rate limits, scopes thread memory, and records an audit log.
+     * Enforces per-user per-provider rate limits, persists chat history in MongoDB Atlas,
+     * seeds agent multi-turn memory from past turns, and records audit logs.
      */
     @PostMapping("/chat")
     public ResponseEntity<?> proxyChat(
@@ -57,11 +67,48 @@ public class AiProxyController {
         String provider = (String) requestBody.getOrDefault("provider", "groq");
         rateLimitService.checkRateLimit(userDetails.getId(), provider);
 
-        // Ensure session memory thread is uniquely scoped to this user if not custom
-        Map<String, Object> payload = new HashMap<>(requestBody);
-        if (!payload.containsKey("thread_id") || "default".equals(payload.get("thread_id"))) {
-            payload.put("thread_id", "user_" + userDetails.getId());
+        String userMessage = (String) requestBody.get("message");
+        if (userMessage == null || userMessage.isBlank()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Message content cannot be blank"));
         }
+
+        // 1. Resolve or auto-create conversation
+        String conversationId = (String) requestBody.get("conversationId");
+        if (conversationId == null || conversationId.isBlank()) {
+            conversationId = (String) requestBody.get("conversation_id");
+        }
+
+        Conversation conversation;
+        if (conversationId == null || conversationId.isBlank()) {
+            conversation = chatService.createConversation(
+                    userDetails.getId(),
+                    new CreateConversationRequest("New Chat", provider)
+            );
+            conversationId = conversation.getId();
+        } else {
+            conversation = chatService.getConversation(conversationId, userDetails.getId());
+        }
+
+        // 2. Persist user message to MongoDB Atlas
+        ChatMessage savedUserMsg = chatService.saveUserMessage(conversationId, userDetails.getId(), userMessage);
+
+        // 3. Fetch prior conversation turns for persistent agent memory context
+        List<ChatMessage> priorMessages = chatService.getRecentContextMessages(conversationId, userDetails.getId(), 10);
+        List<Map<String, String>> historyList = new ArrayList<>();
+        for (ChatMessage msg : priorMessages) {
+            // Exclude the message we just saved to avoid duplicates
+            if (!msg.getId().equals(savedUserMsg.getId())) {
+                Map<String, String> item = new HashMap<>();
+                item.put("role", msg.getRole());
+                item.put("content", msg.getContent());
+                historyList.add(item);
+            }
+        }
+
+        // 4. Build downstream payload
+        Map<String, Object> payload = new HashMap<>(requestBody);
+        payload.put("thread_id", conversationId);
+        payload.put("history", historyList);
 
         try {
             ResponseEntity<Map> downstream = restClient.post()
@@ -71,8 +118,30 @@ public class AiProxyController {
                     .retrieve()
                     .toEntity(Map.class);
 
-            auditLogService.log(userDetails.getId(), "AI_CHAT_COMPLETED", provider, null, "Provider used: " + provider);
-            return ResponseEntity.status(downstream.getStatusCode()).body(downstream.getBody());
+            Map<String, Object> responseBody = downstream.getBody();
+            if (responseBody != null) {
+                String responseText = (String) responseBody.get("response");
+                String voiceScript = (String) responseBody.get("voice_script");
+                List<String> toolsUsed = (List<String>) responseBody.getOrDefault("tools_executed", new ArrayList<>());
+
+                // 5. Persist assistant message to MongoDB Atlas
+                ChatMessage savedAssistantMsg = chatService.saveAssistantMessage(
+                        conversationId,
+                        userDetails.getId(),
+                        responseText,
+                        voiceScript,
+                        provider,
+                        toolsUsed
+                );
+
+                // Enrich client response with conversation and message metadata
+                responseBody.put("conversationId", conversationId);
+                responseBody.put("userMessageId", savedUserMsg.getId());
+                responseBody.put("assistantMessageId", savedAssistantMsg.getId());
+            }
+
+            auditLogService.log(userDetails.getId(), "AI_CHAT_COMPLETED", provider, null, "Conversation: " + conversationId);
+            return ResponseEntity.status(downstream.getStatusCode()).body(responseBody);
         } catch (Exception e) {
             auditLogService.log(userDetails.getId(), "AI_CHAT_FAILED", provider, null, e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_GATEWAY)

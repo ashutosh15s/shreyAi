@@ -20,7 +20,8 @@ def get_llm(provider: str = None) -> BaseChatModel:
         return ChatGroq(
             api_key=groq_key,
             model_name=model,
-            temperature=0.7
+            temperature=0.7,
+            max_tokens=512
         )
 
     # 2. OpenRouter (Using dynamic free router openrouter/free)

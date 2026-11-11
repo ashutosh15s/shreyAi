@@ -13,6 +13,7 @@ class ChatPipelineRequest(BaseModel):
     thread_id: Optional[str] = Field("default", description="Conversation session ID")
     provider: Optional[str] = Field(None, description="Preferred provider: groq, openrouter, or gemini")
     include_voice_script: bool = Field(True, description="Generate phonetically cleaned script for TTS")
+    history: Optional[List[Dict[str, str]]] = Field(default=None, description="Prior conversational turns for persistent memory")
 
 
 class ChatPipelineResponse(BaseModel):
@@ -59,7 +60,8 @@ class ChatPipeline:
         agent_input = AgentInput(
             text=cleaned_text,
             thread_id=request.thread_id or "default",
-            provider=request.provider
+            provider=request.provider,
+            history=request.history
         )
 
         agent_output: AgentOutput = agent.process(agent_input)
