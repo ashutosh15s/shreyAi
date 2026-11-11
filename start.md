@@ -1,117 +1,73 @@
 # 🚀 Shrey AI — Services Startup Guide
 
-This document provides all commands to start the backend, AI microservice, and frontend for **Shrey AI**.
+All services can now be started using **simple standard `npm run dev` commands**, just like the frontend!
 
 ---
 
-## ⚡ Quick Start: Automated Launchers
+## ⚡ Super Short Commands: `npm run dev`
 
-### Option 1: Start All Services via PowerShell
-Open PowerShell in the project root (`c:\Users\Dell\Desktop\projects\shrey_Ai`) and run:
-```powershell
-# Starts AI Service (:8000), Spring Boot (:8080), and Frontend (:5173) in separate windows
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd Ai; .\.venv\Scripts\uvicorn.exe main:app --host 0.0.0.0 --port 8000 --reload"
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd backend; java -jar target\backend-0.0.1-SNAPSHOT.jar"
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd frontend; npm run dev"
-```
+You can run `npm run dev` directly inside each folder:
 
----
-
-## 🖥️ Manual Startup: Service by Service
-
-### 1. Python AI Microservice (Port `8000`)
-Powers the LangGraph ReAct Agent, 18 Desktop/Web tools, ChromaDB ONNX RAG, and Groq/OpenRouter/Gemini LLMs.
-
-```powershell
-cd c:\Users\Dell\Desktop\projects\shrey_Ai\Ai
-.\.venv\Scripts\uvicorn.exe main:app --host 0.0.0.0 --port 8000 --reload
-```
-* **Health Check:** `http://localhost:8000/health`
-* **Status Check:** `http://localhost:8000/ai/status`
-* **Swagger Docs:** `http://localhost:8000/docs`
-
-> [!NOTE]
-> The AI service runs strictly as a private downstream microservice. The frontend should **never** call port `8000` directly.
+| Service | Folder | Short Command | What It Runs |
+|---|---|---|---|
+| **Spring Boot Gateway** | `backend/` | `npm run dev` *(or just `dev`)* | `java -jar target/backend-0.0.1-SNAPSHOT.jar` (Port `8080`) |
+| **Python AI Engine** | `Ai/` | `npm run dev` *(or just `dev`)* | Uvicorn FastAPI with live reload (Port `8000`) |
+| **Electron UI Client** | `frontend/` | `npm run dev` | Vite + React + Electron dev server (Port `5173`) |
 
 ---
 
-### 2. Spring Boot Gateway & Security Backend (Port `8080`)
-Handles JWT authentication, user registration/login, MongoDB Atlas persistence, Bucket4j rate-limiting, audit logs, and reverse proxying to the AI engine.
+## 🌐 Running From the Root Project Directory
 
-#### Fast Start (Pre-compiled JAR):
-```powershell
-cd c:\Users\Dell\Desktop\projects\shrey_Ai\backend
-java -jar target\backend-0.0.1-SNAPSHOT.jar
-```
-
-#### Development Mode (with Maven Auto-Reload):
-```powershell
-cd c:\Users\Dell\Desktop\projects\shrey_Ai\backend
-c:\Users\Dell\Desktop\projects\shrey_Ai\apache-maven-3.9.9\bin\mvn.cmd spring-boot:run
-```
-* **Health Check:** `http://localhost:8080/actuator/health`
-* **AI Proxy Health:** `http://localhost:8080/api/ai/health`
-* **AI Proxy Status:** `http://localhost:8080/api/ai/status`
-* **AI Proxy Chat:** `POST http://localhost:8080/api/ai/chat` (Requires `Authorization: Bearer <token>`)
-
----
-
-### 3. Electron + React Frontend (Port `5173` / Electron App Window)
-The desktop voice and chat companion UI.
+From the project root (`c:\Users\Dell\Desktop\projects\shrey_Ai`), you can start any service or everything together:
 
 ```powershell
-cd c:\Users\Dell\Desktop\projects\shrey_Ai\frontend
+# 1. Start Both Backend + AI Services in separate windows
 npm run dev
+
+# 2. Or start individual services directly from root:
+npm run dev:backend     # Runs Spring Boot Gateway (:8080)
+npm run dev:ai          # Runs FastAPI AI Microservice (:8000)
+npm run dev:frontend    # Runs Electron React Frontend (:5173)
 ```
 
 ---
 
-## 🧪 Verification & Health Checking
+## 🛠️ Additional Helpful Commands
 
-To verify that both backend services are running and communicating properly:
+### In `backend/`:
+* `npm run dev` — Instant fast startup (3s via pre-compiled JAR).
+* `npm run dev:watch` — Development mode using Maven with auto-reload (`mvn spring-boot:run`).
+* `npm run build` — Clean package the JAR (`mvn clean package -DskipTests`).
+* `.\dev` — Even shorter Windows shortcut (runs `dev.cmd`).
+
+### In `Ai/`:
+* `npm run dev` — Starts FastAPI with `--reload`.
+* `.\dev` — Even shorter Windows shortcut (runs `dev.cmd`).
+
+---
+
+## 🧪 Quick Health Checks
+
+To verify all services are active:
 
 ```powershell
-# 1. Check AI service direct probe
+# Check AI microservice
 curl http://localhost:8000/health
 
-# 2. Check Spring Boot gateway health
+# Check Spring Boot gateway
 curl http://localhost:8080/actuator/health
 
-# 3. Check Spring Boot -> AI service proxy forwarding
-curl http://localhost:8080/api/ai/health
+# Check Spring Boot -> AI proxy forwarding
 curl http://localhost:8080/api/ai/status
 ```
 
-Expected output for `http://localhost:8080/api/ai/status`:
-```json
-{
-  "status": "ready",
-  "name": "Shrey AI",
-  "creators": ["Aryan", "Arpit", "Ashutosh"],
-  "default_provider": "groq",
-  "providers_configured": {
-    "groq": true,
-    "gemini": true,
-    "openrouter": true,
-    "tavily": true
-  },
-  "voice": {
-    "stt": "gemini",
-    "tts": "gemini",
-    "text_reply_enabled": true
-  },
-  "workflow": "active"
-}
-```
-
 ---
 
-## 🛑 How to Stop Services
+## 🛑 How to Stop All Services
 
-To terminate running background instances on ports `8000` and `8080`:
+To shut down any running background instances on ports `8000` and `8080`:
 
 ```powershell
-# Kill processes on ports 8000 and 8080
 Get-NetTCPConnection -LocalPort 8000, 8080 -ErrorAction SilentlyContinue | ForEach-Object {
     Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue
 }

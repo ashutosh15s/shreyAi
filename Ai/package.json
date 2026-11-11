@@ -1,0 +1,9 @@
+{
+  "name": "shrey-ai-service",
+  "version": "1.0.0",
+  "description": "Python FastAPI AI Engine with LangGraph ReAct Agent",
+  "scripts": {
+    "dev": ".\\.venv\\Scripts\\uvicorn.exe main:app --host 0.0.0.0 --port 8000 --reload",
+    "start": ".\\.venv\\Scripts\\uvicorn.exe main:app --host 0.0.0.0 --port 8000"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "shrey-ai",
+  "version": "1.0.0",
+  "description": "Shrey AI - Elite Omnipresent Voice & Desktop AI Companion",
+  "scripts": {
+    "dev": "cmd /c start_services.bat",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:ai": "npm --prefix Ai run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:backend": "npm --prefix backend run build",
+    "build:frontend": "npm --prefix frontend run build"
+  }
+}
