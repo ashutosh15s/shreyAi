@@ -119,11 +119,12 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           {isPassword && (
             <button
               type="button"
-              tabIndex={-1}
+              tabIndex={0}
               onClick={() => setShow((s) => !s)}
               aria-label={show ? 'Hide password' : 'Show password'}
               className={cn(
                 'transition-colors',
+                'rounded-md p-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--brand)]',
                 light ? 'text-subtle hover:text-copy' : 'text-white/40 hover:text-white',
               )}
             >

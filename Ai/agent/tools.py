@@ -11,9 +11,6 @@ from langchain_core.tools import tool
 from tavily import TavilyClient
 
 
-# =====================================================================
-# 1. WEB & REAL-TIME DATA TOOLS (ALL FREE / ZERO-KEY EXCEPT TAVILY)
-# =====================================================================
 
 @tool
 def tavily_search(query: str, max_results: int = 5) -> str:
@@ -127,10 +124,6 @@ def get_hacker_news_stories(limit: int = 5) -> str:
     except Exception as e:
         return f"Hacker News error: {str(e)}"
 
-
-# =====================================================================
-# 2. DESKTOP & SYSTEM CONTROL TOOLS (100% FREE & LOCAL)
-# =====================================================================
 
 @tool
 def open_in_browser(url: str) -> str:
@@ -404,9 +397,6 @@ def read_local_file(file_path: str) -> str:
         return f"File read error: {str(e)}"
 
 
-# =====================================================================
-# EXPORT ALL TOOLS (16 TOTAL: WEB + DESKTOP + OS AUTOMATION)
-# =====================================================================
 ALL_TOOLS = [
     # Live Web Tools
     tavily_search,

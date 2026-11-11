@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title">
+  <title id="title">Pocket bot mascot concept</title>
+  <circle cx="128" cy="31" r="14" fill="#111111"/>
+  <path fill="#111111" d="M120 39h16v31h-16zM49 105c0-8 6-14 14-14h15v29H63c-8 0-14-7-14-15Zm129-14h15c8 0 14 6 14 14s-6 15-14 15h-15V91Z"/>
+  <path fill="#111111" fill-rule="evenodd" d="M82 90c0-23 18-41 41-41h10c23 0 41 18 41 41v64c0 28-22 50-50 50h-2c-28 0-50-22-50-50V90Zm21 21a9 9 0 1 0 18 0 9 9 0 1 0-18 0Zm32 0a9 9 0 1 0 18 0 9 9 0 1 0-18 0Zm-23 34c8-8 24-8 32 0-8 13-24 13-32 0Z"/>
+  <path fill="#111111" d="M91 186h18v29H91zm56 0h18v29h-18z"/>
+</svg>

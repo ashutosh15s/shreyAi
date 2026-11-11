@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 720" fill="none">
+  <g stroke="#407CF9" stroke-linecap="round">
+    <path d="M-80 245C145 80 318 90 478 260s322 182 562 10" opacity=".08" stroke-width="1.2"/>
+    <path d="M-80 275C145 110 318 120 478 290s322 182 562 10" opacity=".12" stroke-width="1.2"/>
+    <path d="M-80 305C145 140 318 150 478 320s322 182 562 10" opacity=".17" stroke-width="1.3"/>
+    <path d="M-80 335C145 170 318 180 478 350s322 182 562 10" opacity=".22" stroke-width="1.3"/>
+    <path d="M-80 365C145 200 318 210 478 380s322 182 562 10" opacity=".28" stroke-width="1.4"/>
+    <path d="M-80 395C145 230 318 240 478 410s322 182 562 10" opacity=".34" stroke-width="1.4"/>
+    <path d="M-80 425C145 260 318 270 478 440s322 182 562 10" opacity=".40" stroke-width="1.5"/>
+    <path d="M-80 455C145 290 318 300 478 470s322 182 562 10" opacity=".46" stroke-width="1.5"/>
+    <path d="M-80 485C145 320 318 330 478 500s322 182 562 10" opacity=".38" stroke-width="1.5"/>
+    <path d="M-80 515C145 350 318 360 478 530s322 182 562 10" opacity=".30" stroke-width="1.4"/>
+    <path d="M-80 545C145 380 318 390 478 560s322 182 562 10" opacity=".22" stroke-width="1.3"/>
+    <path d="M-80 575C145 410 318 420 478 590s322 182 562 10" opacity=".15" stroke-width="1.2"/>
+  </g>
+  <path d="M-20 568C182 424 339 430 486 564s281 145 494 0" stroke="#67D6F5" stroke-linecap="round" stroke-width="1.6" opacity=".42"/>
+</svg>

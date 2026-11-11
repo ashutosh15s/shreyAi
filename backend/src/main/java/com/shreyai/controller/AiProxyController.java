@@ -200,6 +200,53 @@ public class AiProxyController {
     }
 
     /**
+     * Confirmation Layer for sensitive tasks (process kill, delete, workstation lock).
+     * Receives user approval/rejection from frontend permission UI and passes to AI downstream.
+     */
+    @PostMapping("/confirm")
+    public ResponseEntity<?> confirmAction(
+            @RequestBody Map<String, Object> requestBody,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        String actionId = (String) requestBody.get("actionId");
+        if (actionId == null) {
+            actionId = (String) requestBody.get("action_id");
+        }
+        String actionType = (String) requestBody.get("actionType");
+        if (actionType == null) {
+            actionType = (String) requestBody.get("action_type");
+        }
+        Boolean approved = (Boolean) requestBody.get("approved");
+        if (approved == null) {
+            approved = true;
+        }
+
+        Map<String, Object> payload = new HashMap<>(requestBody);
+        payload.put("action_id", actionId != null ? actionId : "act_" + System.currentTimeMillis());
+        payload.put("action_type", actionType != null ? actionType : "custom");
+        payload.put("approved", approved);
+        payload.put("user_id", userDetails.getId());
+
+        try {
+            ResponseEntity<Map> downstream = restClient.post()
+                    .uri("/ai/confirm")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(payload)
+                    .retrieve()
+                    .toEntity(Map.class);
+
+            String logAction = Boolean.TRUE.equals(approved) ? "AI_ACTION_APPROVED" : "AI_ACTION_REJECTED";
+            auditLogService.log(userDetails.getId(), logAction, "confirmation", null, "Action: " + actionType);
+
+            return ResponseEntity.status(downstream.getStatusCode()).body(downstream.getBody());
+        } catch (Exception e) {
+            auditLogService.log(userDetails.getId(), "AI_ACTION_CONFIRM_FAILED", "confirmation", null, e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                    .body(ApiResponse.error("Confirmation error: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Downstream health probe for FastAPI.
      */
     @GetMapping("/health")
