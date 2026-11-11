@@ -25,6 +25,8 @@ public class User {
 
     private boolean enabled = true;
 
+    private boolean blacklisted = false;
+
     @CreatedDate
     private Instant createdAt;
 
@@ -90,6 +92,14 @@ public class User {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public boolean isBlacklisted() {
+        return blacklisted;
+    }
+
+    public void setBlacklisted(boolean blacklisted) {
+        this.blacklisted = blacklisted;
     }
 
     public Instant getCreatedAt() {

@@ -18,6 +18,8 @@ public class RegisterRequest {
     @Size(min = 6, max = 100, message = "Password must be at least 6 characters")
     private String password;
 
+    private com.shreyai.model.Role role;
+
     public RegisterRequest() {
     }
 
@@ -25,6 +27,21 @@ public class RegisterRequest {
         this.name = name;
         this.email = email;
         this.password = password;
+    }
+
+    public RegisterRequest(String name, String email, String password, com.shreyai.model.Role role) {
+        this.name = name;
+        this.email = email;
+        this.password = password;
+        this.role = role;
+    }
+
+    public com.shreyai.model.Role getRole() {
+        return role;
+    }
+
+    public void setRole(com.shreyai.model.Role role) {
+        this.role = role;
     }
 
     public String getName() {

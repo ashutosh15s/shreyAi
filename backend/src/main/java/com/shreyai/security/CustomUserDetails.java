@@ -16,6 +16,7 @@ public class CustomUserDetails implements UserDetails {
     private final String password;
     private final Role role;
     private final boolean enabled;
+    private final boolean blacklisted;
     private final Collection<? extends GrantedAuthority> authorities;
 
     public CustomUserDetails(User user) {
@@ -24,6 +25,7 @@ public class CustomUserDetails implements UserDetails {
         this.password = user.getPasswordHash();
         this.role = user.getRole();
         this.enabled = user.isEnabled();
+        this.blacklisted = user.isBlacklisted();
         this.authorities = Collections.singletonList(new SimpleGrantedAuthority(user.getRole().name()));
     }
 
@@ -57,7 +59,7 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return !blacklisted;
     }
 
     @Override
@@ -67,7 +69,7 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return enabled;
+        return enabled && !blacklisted;
     }
 }
 

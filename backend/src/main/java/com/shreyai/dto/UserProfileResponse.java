@@ -11,20 +11,30 @@ public class UserProfileResponse {
     private String email;
     private Role role;
     private boolean enabled;
+    private boolean blacklisted;
     private Instant createdAt;
     private Instant updatedAt;
 
     public UserProfileResponse() {
     }
 
-    public UserProfileResponse(String id, String name, String email, Role role, boolean enabled, Instant createdAt, Instant updatedAt) {
+    public UserProfileResponse(String id, String name, String email, Role role, boolean enabled, boolean blacklisted, Instant createdAt, Instant updatedAt) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.role = role;
         this.enabled = enabled;
+        this.blacklisted = blacklisted;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+    }
+
+    public boolean isBlacklisted() {
+        return blacklisted;
+    }
+
+    public void setBlacklisted(boolean blacklisted) {
+        this.blacklisted = blacklisted;
     }
 
     public String getId() {

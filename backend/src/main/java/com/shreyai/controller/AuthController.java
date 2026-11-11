@@ -51,19 +51,25 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
             @RequestBody(required = false) RefreshTokenRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         String userId = userDetails != null ? userDetails.getId() : "anonymous";
+        String accessToken = (authHeader != null && authHeader.startsWith("Bearer ")) ? authHeader.substring(7) : null;
         String refreshToken = request != null ? request.getRefreshToken() : null;
-        authService.logout(refreshToken, userId);
-        return ResponseEntity.ok(ApiResponse.success("Logged out successfully"));
+        authService.logout(accessToken, refreshToken, userId);
+        return ResponseEntity.ok(ApiResponse.success("Logged out successfully, token blacklisted"));
     }
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<UserProfileResponse>> getCurrentUser(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("Unauthorized: Valid session required"));
+        }
         UserProfileResponse profile = authService.getProfile(userDetails.getId());
         return ResponseEntity.ok(ApiResponse.success("Profile fetched successfully", profile));
     }

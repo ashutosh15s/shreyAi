@@ -1,10 +1,12 @@
 package com.shreyai.controller;
 
 import com.shreyai.dto.ApiResponse;
+import com.shreyai.dto.UpdateProfileRequest;
 import com.shreyai.dto.UserProfileResponse;
 import com.shreyai.model.Role;
 import com.shreyai.security.CustomUserDetails;
 import com.shreyai.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -46,6 +48,16 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("User retrieved successfully", user));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<UserProfileResponse>> updateUser(
+            @PathVariable String id,
+            @Valid @RequestBody UpdateProfileRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        UserProfileResponse updated = userService.updateUser(id, request, userDetails.getId());
+        return ResponseEntity.ok(ApiResponse.success("User updated successfully", updated));
+    }
+
     @PatchMapping("/{id}/role")
     public ResponseEntity<ApiResponse<UserProfileResponse>> updateUserRole(
             @PathVariable String id,
@@ -58,6 +70,18 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("User role updated successfully", updated));
     }
 
+    @PatchMapping("/{id}/blacklist")
+    public ResponseEntity<ApiResponse<UserProfileResponse>> setUserBlacklisted(
+            @PathVariable String id,
+            @RequestBody Map<String, Boolean> payload,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        boolean blacklisted = Boolean.TRUE.equals(payload.get("blacklisted"));
+        UserProfileResponse updated = userService.setUserBlacklisted(id, blacklisted, userDetails.getId());
+        String msg = blacklisted ? "User successfully blacklisted and sessions revoked" : "User successfully unblacklisted";
+        return ResponseEntity.ok(ApiResponse.success(msg, updated));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteUser(
             @PathVariable String id,
@@ -67,4 +91,3 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("User deleted successfully"));
     }
 }
-

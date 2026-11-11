@@ -48,6 +48,9 @@ class AuthServiceTest {
     @Mock
     private RateLimitService rateLimitService;
 
+    @Mock
+    private com.shreyai.service.TokenBlacklistService tokenBlacklistService;
+
     private AuthService authService;
 
     @BeforeEach
@@ -58,7 +61,8 @@ class AuthServiceTest {
                 passwordEncoder,
                 jwtService,
                 auditLogService,
-                rateLimitService
+                rateLimitService,
+                tokenBlacklistService
         );
     }
 

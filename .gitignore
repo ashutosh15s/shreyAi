@@ -43,6 +43,11 @@ lerna-debug.log*
 .DS_Store
 Thumbs.db
 
+# Tools & Maven
+.tools/
+apache-maven-3.9.9/
+*.zip
+
 # Agent workspace data
 .gemini/
 .agents/

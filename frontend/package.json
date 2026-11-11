@@ -22,17 +22,23 @@
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
-    "@electron-toolkit/utils": "^4.0.0"
+    "@electron-toolkit/utils": "^4.0.0",
+    "@electron/remote": "^2.1.4",
+    "axios": "^1.21.1",
+    "electron-store": "^12.0.0",
+    "motion": "^14.12.0",
+    "zustand": "^5.1.0"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^3.0.1",
     "@electron-toolkit/eslint-config-ts": "^4.0.0",
     "@electron-toolkit/tsconfig": "^2.0.0",
+    "@tailwindcss/vite": "^4.3.5",
     "@types/node": "^24.19.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
-    "electron": "^44.7.2",
+    "electron": "^31.7.7",
     "electron-builder": "^26.15.3",
     "electron-vite": "^6.0.0",
     "eslint": "^9.39.5",
@@ -40,8 +46,9 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.7",
     "prettier": "^3.9.10",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwindcss": "^4.3.5",
     "typescript": "^5.9.3",
     "vite": "^8.3.4"
   }

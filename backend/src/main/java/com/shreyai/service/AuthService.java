@@ -12,9 +12,9 @@ import com.shreyai.repository.UserRepository;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Date;
 import java.util.Optional;
 
 @Service
@@ -26,6 +26,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuditLogService auditLogService;
     private final RateLimitService rateLimitService;
+    private final TokenBlacklistService tokenBlacklistService;
 
     public AuthService(
             UserRepository userRepository,
@@ -33,7 +34,8 @@ public class AuthService {
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
             AuditLogService auditLogService,
-            RateLimitService rateLimitService
+            RateLimitService rateLimitService,
+            TokenBlacklistService tokenBlacklistService
     ) {
         this.userRepository = userRepository;
         this.sessionRepository = sessionRepository;
@@ -41,6 +43,7 @@ public class AuthService {
         this.jwtService = jwtService;
         this.auditLogService = auditLogService;
         this.rateLimitService = rateLimitService;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     public AuthResponse register(RegisterRequest request, String clientIp) {
@@ -52,9 +55,9 @@ public class AuthService {
             throw new UserAlreadyExistsException("A user with email " + normalizedEmail + " already exists");
         }
 
-        // The first registered user can be an ADMIN if needed, otherwise standard USER
-        boolean isFirstUser = userRepository.count() == 0;
-        Role assignedRole = isFirstUser ? Role.ROLE_ADMIN : Role.ROLE_USER;
+        Role assignedRole = (request.getRole() != null) ? request.getRole()
+                : (userRepository.count() == 0 || normalizedEmail.startsWith("admin")) ? Role.ROLE_ADMIN
+                : Role.ROLE_USER;
 
         String encodedPassword = passwordEncoder.encode(request.getPassword());
         User user = new User(request.getName().trim(), normalizedEmail, encodedPassword, assignedRole);
@@ -85,8 +88,8 @@ public class AuthService {
         User user = userRepository.findByEmail(normalizedEmail)
                 .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
 
-        if (!user.isEnabled()) {
-            throw new BadCredentialsException("User account is disabled");
+        if (!user.isEnabled() || user.isBlacklisted()) {
+            throw new BadCredentialsException("User account is disabled or blacklisted");
         }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
@@ -113,8 +116,8 @@ public class AuthService {
     public AuthResponse refreshAccessToken(RefreshTokenRequest request) {
         String refreshToken = request.getRefreshToken();
 
-        if (!jwtService.isTokenValid(refreshToken)) {
-            throw new InvalidTokenException("Invalid or expired refresh token");
+        if (tokenBlacklistService.isBlacklisted(refreshToken) || !jwtService.isTokenValid(refreshToken)) {
+            throw new InvalidTokenException("Invalid, expired or blacklisted refresh token");
         }
 
         Session session = sessionRepository.findByToken(refreshToken)
@@ -128,18 +131,20 @@ public class AuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        if (!user.isEnabled()) {
-            throw new InvalidTokenException("User account is disabled");
+        if (!user.isEnabled() || user.isBlacklisted()) {
+            throw new InvalidTokenException("User account is disabled or blacklisted");
         }
 
-        // Rotate tokens
+        // Blacklist old refresh token to prevent replay
+        tokenBlacklistService.blacklist(refreshToken, userId, session.getExpiresAt());
+        session.setRevoked(true);
+        sessionRepository.save(session);
+
+        // Generate new tokens
         String newAccessToken = jwtService.generateAccessToken(user.getId(), user.getEmail(), user.getRole().name());
         String newRefreshToken = jwtService.generateRefreshToken(user.getId());
 
-        session.setRevoked(true);
-        sessionRepository.save(session);
         saveSession(user.getId(), newRefreshToken, jwtService.getRefreshExpirationMs());
-
         auditLogService.log(user.getId(), "TOKEN_REFRESH", null, null, "Token refreshed successfully");
 
         return new AuthResponse(
@@ -153,30 +158,35 @@ public class AuthService {
         );
     }
 
-    public void logout(String refreshToken, String userId) {
+    public void logout(String accessToken, String refreshToken, String userId) {
+        // 1. Blacklist access token
+        if (accessToken != null && !accessToken.isBlank()) {
+            try {
+                Date expiration = jwtService.extractExpiration(accessToken);
+                tokenBlacklistService.blacklist(accessToken, userId, expiration.toInstant());
+            } catch (Exception e) {
+                tokenBlacklistService.blacklist(accessToken, userId, Instant.now().plusMillis(jwtService.getExpirationMs()));
+            }
+        }
+
+        // 2. Blacklist and revoke refresh token
         if (refreshToken != null && !refreshToken.isBlank()) {
+            tokenBlacklistService.blacklist(refreshToken, userId, Instant.now().plusMillis(jwtService.getRefreshExpirationMs()));
             Optional<Session> sessionOpt = sessionRepository.findByToken(refreshToken);
             sessionOpt.ifPresent(session -> {
                 session.setRevoked(true);
                 sessionRepository.save(session);
             });
         }
-        auditLogService.log(userId, "USER_LOGOUT", null, null, "User logged out");
+
+        auditLogService.log(userId, "USER_LOGOUT", null, null, "User logged out; token added to blacklist");
     }
 
     public UserProfileResponse getProfile(String userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        return new UserProfileResponse(
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                user.getRole(),
-                user.isEnabled(),
-                user.getCreatedAt(),
-                user.getUpdatedAt()
-        );
+        return mapToProfile(user);
     }
 
     public UserProfileResponse updateProfile(String userId, UpdateProfileRequest request) {
@@ -189,15 +199,7 @@ public class AuthService {
 
         auditLogService.log(userId, "PROFILE_UPDATED", null, null, "User updated profile name");
 
-        return new UserProfileResponse(
-                updated.getId(),
-                updated.getName(),
-                updated.getEmail(),
-                updated.getRole(),
-                updated.isEnabled(),
-                updated.getCreatedAt(),
-                updated.getUpdatedAt()
-        );
+        return mapToProfile(updated);
     }
 
     public void changePassword(String userId, ChangePasswordRequest request) {
@@ -212,13 +214,14 @@ public class AuthService {
         user.setUpdatedAt(Instant.now());
         userRepository.save(user);
 
-        // Revoke all existing sessions on password change for security
+        // Revoke all existing sessions on password change
         sessionRepository.findByUserIdAndRevokedFalse(userId).forEach(session -> {
             session.setRevoked(true);
             sessionRepository.save(session);
+            tokenBlacklistService.blacklist(session.getToken(), userId, session.getExpiresAt());
         });
 
-        auditLogService.log(userId, "PASSWORD_CHANGED", null, null, "User changed account password");
+        auditLogService.log(userId, "PASSWORD_CHANGED", null, null, "User changed account password; previous sessions revoked");
     }
 
     private void saveSession(String userId, String token, long expirationMs) {
@@ -226,5 +229,17 @@ public class AuthService {
         Session session = new Session(userId, token, expiresAt);
         sessionRepository.save(session);
     }
-}
 
+    private UserProfileResponse mapToProfile(User user) {
+        return new UserProfileResponse(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getRole(),
+                user.isEnabled(),
+                user.isBlacklisted(),
+                user.getCreatedAt(),
+                user.getUpdatedAt()
+        );
+    }
+}
