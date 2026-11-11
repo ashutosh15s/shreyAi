@@ -47,7 +47,11 @@ Processes user message or speech transcript, passes it to the `ChatPipeline`, ex
   "message": "What is my current CPU and RAM usage?",
   "thread_id": "session-user-123", // Optional: Conversation memory session ID
   "provider": "groq",               // Optional: "groq", "openrouter", or "gemini"
-  "include_voice_script": true     // Optional: Generates clean spoken text for TTS
+  "include_voice_script": true,     // Optional: Generates clean spoken text for TTS
+  "history": [                      // Optional: Prior turns for persistent memory
+    { "role": "user", "content": "My name is Ashutosh." },
+    { "role": "assistant", "content": "Hello Ashutosh! How can I help you?" }
+  ]
 }
 ```
 
