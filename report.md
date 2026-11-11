@@ -81,3 +81,4 @@ Your Atlas database cluster now contains live documents across four active colle
 
 ## 🔗 Next Steps
 - Reference [backend/api.md](file:///c:/Users/Dell/Desktop/projects/shrey_Ai/backend/api.md) for full endpoint specifications, request payloads, and TypeScript/Axios code to connect the frontend.
+

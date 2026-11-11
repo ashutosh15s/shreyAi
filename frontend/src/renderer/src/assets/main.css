@@ -1,4 +1,27 @@
+@import 'tailwindcss';
 @import './base.css';
+
+@theme {
+  --color-body: #172b4d;
+  --color-copy: #171717;
+  --color-subtle: #737373;
+  --color-surface: #ffffff;
+}
+
+:root {
+  --brand-primary: #407cf9;
+  --button-border: #d9d9da;
+  --button-border-hover: #b4b4b5;
+  --button-surface-top: #ffffff;
+  --button-surface-bottom: #fafafa;
+  --effect-white-full: #ffffff;
+  --effect-white-24: rgb(255 255 255 / 24%);
+  --effect-white-10: rgb(255 255 255 / 10%);
+  --status-error-soft: #fff1f2;
+  --status-error-soft-strong: #ffe4e6;
+  --status-error-deep: #be123c;
+  --status-error-strong: #9f1239;
+}
 
 body {
   display: flex;

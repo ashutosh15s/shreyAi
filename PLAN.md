@@ -1,7 +1,7 @@
 # Shrey AI — Full Project Plan
 
 > **AI Voice Assistant Desktop App** · Electron + React · Spring Boot · FastAPI + LangChain/LangGraph · ChromaDB · MongoDB
-> **LLM Providers:** Groq · Grok (xAI) · OpenRouter · Google Gemini
+> **LLM & Voice Providers:** Groq · Google Gemini (LLM, STT & TTS) · OpenRouter
 
 ---
 
@@ -45,19 +45,18 @@ java -version && mvn -version && python --version
 
 ## 🤖 LLM & Voice Provider Strategy
 
-Shrey uses **four LLM providers** in a priority chain. The LangGraph router picks the best model per request type, with automatic fallback.
+Shrey uses **three AI providers**: Groq as primary LLM, Google Gemini for STT, TTS, and multimodal/vision, and OpenRouter for fallback.
 
-### LLM Providers
+### LLM & Voice Providers
 
-| Priority | Provider | Models | Use Case | Cost |
-|----------|---------|--------|----------|------|
+| Priority | Provider | Models / Features | Use Case | Cost |
+|----------|---------|-------------------|----------|------|
 | 1 | **Groq** | `llama-3.3-70b-versatile`, `mixtral-8x7b` | Main chat — ultra-fast inference | Free tier (generous) |
-| 2 | **Grok (xAI)** | `grok-beta`, `grok-2` | Complex reasoning, long context | Paid |
-| 3 | **Google Gemini** | `gemini-2.0-flash`, `gemini-1.5-flash` | Multimodal, code, vision | Free tier |
-| 4 | **OpenRouter** | `meta-llama/llama-3.1-8b-instruct:free`, `google/gemma-2-9b-it:free`, `mistralai/mistral-7b-instruct:free` | Fallback, free-tier overflow | Free |
+| 2 | **Google Gemini** | `gemini-2.0-flash`, `gemini-1.5-flash` | STT, TTS, multimodal, code, vision | Free tier |
+| 3 | **OpenRouter** | `meta-llama/llama-3.1-8b-instruct:free`, `google/gemma-2-9b-it:free`, `mistralai/mistral-7b-instruct:free` | Fallback, free-tier overflow | Free |
 
 > [!TIP]
-> Groq is the **default** for speed. The LangGraph router switches to Grok for heavy reasoning, Gemini for multimodal/vision, and OpenRouter free models when Groq quota is exhausted.
+> Groq is the **default** for speed. Google Gemini handles voice STT, voice TTS, and vision. OpenRouter free models act as fallback when Groq quota is exhausted.
 
 ---
 
@@ -360,8 +359,8 @@ backend/src/main/java/com/shreyai/
 | `langchain` + `langchain-community` | Orchestration |
 | `langgraph` | Multi-step agent graph |
 | `langchain-groq` | Groq LLM |
-| `langchain-xai` | Grok (xAI) LLM |
-| `langchain-google-genai` | Gemini LLM |
+| `langchain-google-genai` | Gemini LLM, STT & TTS |
+| `google-generativeai` | Gemini Python SDK |
 | `langchain-openai` | OpenRouter (OpenAI-compatible base URL) |
 | `chromadb` | Vector store |
 | `sentence-transformers` | Local embeddings |
@@ -446,8 +445,8 @@ uvicorn[standard]==0.30.0
 langchain==0.3.0
 langchain-community==0.3.0
 langchain-groq==0.2.0
-langchain-xai==0.1.0
 langchain-google-genai==2.0.0
+google-generativeai>=0.8.0
 langchain-openai==0.2.0
 langgraph==0.2.0
 chromadb==0.5.0
@@ -459,6 +458,7 @@ pymongo==4.8.0
 python-jose[cryptography]==3.3.0
 pydantic==2.8.0
 python-multipart==0.0.9
+python-dotenv==1.0.1
 ```
 
 ---
@@ -507,9 +507,8 @@ ai.service.url=http://localhost:8000
 
 ### `Ai/.env`
 ```env
-# LLM providers
+# LLM & Voice providers
 GROQ_API_KEY=gsk_...
-XAI_API_KEY=xai_...
 GOOGLE_API_KEY=AIza...
 OPENROUTER_API_KEY=sk-or-...
 

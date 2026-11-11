@@ -75,3 +75,4 @@ public class BlacklistedToken {
         this.createdAt = createdAt;
     }
 }
+

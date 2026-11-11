@@ -388,6 +388,75 @@ In case of error:
 
 ---
 
+## 🤖 5. AI Service & Chat Gateway APIs (`/api/ai`)
+
+### 5.1 Chat with Shrey AI
+- **Method:** `POST`
+- **Path:** `/api/ai/chat`
+- **Access:** Authenticated (Any role)
+- **Headers:** `Authorization: Bearer <accessToken>`, `Content-Type: application/json`
+
+**Request Body:**
+```json
+{
+  "message": "What is the latest score in the Champions League and summarize it for me?",
+  "thread_id": "session-user-123", // Optional: conversation thread ID for memory
+  "provider": "openrouter" // Optional: "groq", "openrouter", or "gemini"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "response": "Real Madrid defeated Manchester City 3-2 in an exhilarating quarterfinal match...",
+  "tools_used": ["tavily_search"],
+  "thread_id": "session-user-123",
+  "provider": "openrouter"
+}
+```
+
+### 5.2 AI Service Health Probe
+- **Method:** `GET`
+- **Path:** `/api/ai/health`
+- **Access:** Public
+
+**Response (200 OK):**
+```json
+{
+  "status": "ok",
+  "service": "shrey-ai-service"
+}
+```
+
+### 5.3 AI Service Status Probe
+- **Method:** `GET`
+- **Path:** `/api/ai/status`
+- **Access:** Public
+
+**Response (200 OK):**
+```json
+{
+  "status": "ready",
+  "name": "Shrey AI",
+  "creators": ["Aryan", "Arpit", "Ashutosh"],
+  "default_provider": "groq",
+  "providers_configured": {
+    "groq": false,
+    "gemini": false,
+    "openrouter": true,
+    "tavily": true
+  },
+  "voice": {
+    "stt": "gemini",
+    "tts": "gemini",
+    "text_reply_enabled": true
+  },
+  "workflow": "active"
+}
+```
+
+---
+
 ## 💻 Frontend Client Sample (Axios + TypeScript)
 
 ```typescript
@@ -437,3 +506,4 @@ api.interceptors.response.use(
 
 export default api;
 ```
+

@@ -1,4 +1,4 @@
-﻿# Comprehensive End-to-End API Test Runner for Shrey AI Backend using native PowerShell
+# Comprehensive End-to-End API Test Runner for Shrey AI Backend using native PowerShell
 
 $ErrorActionPreference = "Continue"
 $BaseUrl = "http://localhost:8080"

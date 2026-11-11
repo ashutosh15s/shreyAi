@@ -2,10 +2,7 @@
 
 import * as React from 'react'
 import { AnimatePresence, motion, type HTMLMotionProps } from 'motion/react'
-import { twMerge } from 'tailwind-merge'
-
-const cn = (...classes: Array<string | false | null | undefined>) =>
-  twMerge(classes.filter(Boolean).join(' '))
+import { cn } from '../lib/utils'
 
 /**
  * Every variant reads the brand colour from the `--brand` CSS variable,

@@ -16,3 +16,4 @@ public interface BlacklistedTokenRepository extends MongoRepository<BlacklistedT
 
     void deleteByExpiresAtBefore(Instant now);
 }
+

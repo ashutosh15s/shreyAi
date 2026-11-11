@@ -32,3 +32,4 @@ public class TokenBlacklistService {
         return blacklistedTokenRepository.existsByToken(token);
     }
 }
+

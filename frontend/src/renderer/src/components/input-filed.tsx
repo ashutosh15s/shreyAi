@@ -1,7 +1,6 @@
 'use client'
 
 import * as React from 'react'
-import { twMerge } from 'tailwind-merge'
 import {
   IconEye,
   IconEyeOff,
@@ -10,9 +9,7 @@ import {
   IconPhone,
   IconSearch,
 } from '@tabler/icons-react'
-
-const cn = (...classes: Array<string | false | null | undefined>) =>
-  twMerge(classes.filter(Boolean).join(' '))
+import { cn } from '../lib/utils'
 
 const defaultIcons: Record<string, React.ElementType | undefined> = {
   email: IconMail,
