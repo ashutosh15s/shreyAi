@@ -1,12 +1,12 @@
 import os
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
-from agent.graph import chat_with_shrey
-from agent.prompts import SHREY_SYSTEM_PROMPT
+from pipeline.chat_pipeline import ChatPipeline, ChatPipelineRequest, ChatPipelineResponse
+from pipeline.rag_pipeline import RagPipeline
 
 # Load environment configuration
 load_dotenv()
@@ -26,18 +26,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Initialize Pipelines
+chat_pipeline = ChatPipeline()
+rag_pipeline = RagPipeline()
 
+
+# Models
 class ChatRequest(BaseModel):
     message: str = Field(..., description="User prompt or transcript from voice/text input")
-    thread_id: Optional[str] = Field("default", description="Conversation session ID for conversational memory")
+    thread_id: Optional[str] = Field("default", description="Conversation session ID for memory")
     provider: Optional[str] = Field(None, description="Preferred provider: groq, openrouter, or gemini")
+    include_voice_script: bool = Field(True, description="Whether to include TTS-ready text")
 
 
-class ChatResponse(BaseModel):
-    response: str
-    tools_used: List[str]
-    thread_id: str
-    provider: str
+class IngestRequest(BaseModel):
+    text: str = Field(..., description="Text content to embed and store in ChromaDB")
+    source: str = Field("custom_doc", description="Source identifier or filename")
+    metadata: Optional[Dict[str, Any]] = Field(default_factory=dict)
+
+
+class QueryRagRequest(BaseModel):
+    query: str = Field(..., description="Query to semantically search in knowledge base")
+    top_k: int = Field(3, description="Number of results to return")
 
 
 @app.get("/")
@@ -47,7 +57,7 @@ def read_root():
         "service": "Shrey AI Engine",
         "version": "1.0.0",
         "creators": ["Aryan", "Arpit", "Ashutosh"],
-        "message": "Shrey AI backend is operational and ready."
+        "architecture": "Class-based ReAct Agent & Multi-Modal Pipeline"
     }
 
 
@@ -81,22 +91,51 @@ def ai_status():
     }
 
 
-@app.post("/ai/chat", response_model=ChatResponse)
+@app.post("/ai/chat", response_model=ChatPipelineResponse)
 def chat_endpoint(req: ChatRequest):
     """
     Primary chat endpoint for Shrey AI.
-    Processes user input, executes tools (Tavily search, system info, clipboard, etc.),
-    and returns a clean response suitable for both voice TTS and markdown display.
+    Processes text input, executes ReAct agent loop, runs tools,
+    and returns both a rich markdown response and a voice-ready script.
     """
     try:
-        result = chat_with_shrey(
+        pipeline_req = ChatPipelineRequest(
             message=req.message,
             thread_id=req.thread_id or "default",
-            provider=req.provider
+            provider=req.provider,
+            include_voice_script=req.include_voice_script
         )
-        return ChatResponse(**result)
+        return chat_pipeline.execute(pipeline_req)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Agent error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Pipeline error: {str(e)}")
+
+
+@app.post("/ai/rag/ingest")
+def rag_ingest(req: IngestRequest):
+    """
+    Ingest text content into the local ChromaDB vector knowledge base.
+    """
+    try:
+        chunks = rag_pipeline.ingest_text(
+            text=req.text,
+            source=req.source,
+            metadata=req.metadata
+        )
+        return {"status": "success", "chunks_ingested": chunks, "source": req.source}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"RAG Ingestion error: {str(e)}")
+
+
+@app.post("/ai/rag/query")
+def rag_query(req: QueryRagRequest):
+    """
+    Query the local ChromaDB vector store for semantic matches.
+    """
+    try:
+        matches = rag_pipeline.retrieve(query=req.query, top_k=req.top_k)
+        return {"query": req.query, "matches": matches}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"RAG Query error: {str(e)}")
 
 
 if __name__ == "__main__":
