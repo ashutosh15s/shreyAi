@@ -1,6 +1,17 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { IconCheck, IconCopy, IconFile, IconPencil, IconTrash, IconUserCircle, IconVolume, IconVolumeOff, IconX } from '@tabler/icons-react'
+import {
+  IconCheck,
+  IconCopy,
+  IconFile,
+  IconPencil,
+  IconTrash,
+  IconUserCircle,
+  IconVolume,
+  IconVolumeOff,
+  IconX,
+  IconCpu,
+} from '@tabler/icons-react'
 import { Button } from '../button'
 import { Logo } from '../Logo'
 import { ConfirmActionModal } from '../ConfirmActionModal'
@@ -11,6 +22,7 @@ export type ChatMessageData = {
   content: string
   voiceScript?: string
   streaming?: boolean
+  toolsExecuted?: string[]
 }
 
 function inlineContent(value: string): React.ReactNode[] {
@@ -196,6 +208,19 @@ export function ChatMessage({ message, onSpeak, onEdit, onDelete }: ChatMessageP
     <motion.article layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.24 }} className="group flex items-start gap-3 py-4" aria-label="Shrey AI response">
       <Logo showName={false} size={28} className="mt-0.5 shrink-0" />
       <div className="min-w-0 flex-1">
+        {message.toolsExecuted && message.toolsExecuted.length > 0 && (
+          <div className="mb-2 flex flex-wrap items-center gap-1.5">
+            {message.toolsExecuted.map((tool) => (
+              <span
+                key={tool}
+                className="inline-flex items-center gap-1 rounded-md border border-neutral-200 bg-neutral-100/90 px-2 py-0.5 text-xs font-mono text-neutral-600"
+              >
+                <IconCpu size={12} className="text-brand" />
+                <span>{tool}</span>
+              </span>
+            ))}
+          </div>
+        )}
         <div className="whitespace-pre-wrap break-words text-[15px] leading-7 text-neutral-800">
           {assistantContent(message.content)}
           {message.streaming && <span aria-label="Shrey AI is responding" className="ml-1 inline-block h-[1.1em] w-[2px] translate-y-[2px] animate-pulse bg-brand motion-reduce:animate-none" />}

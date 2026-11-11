@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AnimatePresence, motion } from 'motion/react'
+import { motion } from 'motion/react'
 import {
   IconMessageCircle,
   IconPlus,
@@ -11,7 +11,6 @@ import {
   IconCheck,
 } from '@tabler/icons-react'
 import { Logo } from '../Logo'
-import { ConfirmActionModal } from '../ConfirmActionModal'
 
 export type ChatThread = {
   id: string
@@ -27,9 +26,9 @@ type ChatSidebarProps = {
   matchingThreadIds?: string[] | null
   onNewChat: () => void
   onSelectThread: (thread: ChatThread) => void
-  onRenameThread?: (thread: ChatThread, title: string) => Promise<void>
-  onDeleteThread?: (thread: ChatThread) => Promise<void>
-  onSearchQuery?: (query: string) => Promise<void>
+  onRenameThread?: (thread: ChatThread, title: string) => void
+  onDeleteThread?: (thread: ChatThread) => void
+  onSearchQuery?: (query: string) => void
   onOpenProfile?: () => void
   onLogout: () => void
   onClose: () => void
@@ -54,10 +53,6 @@ export function ChatSidebar({
   const [query, setQuery] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState('')
-  const [renameTarget, setRenameTarget] = useState<{ thread: ChatThread; title: string } | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<ChatThread | null>(null)
-  const [actionBusy, setActionBusy] = useState(false)
-  const [actionError, setActionError] = useState('')
 
   useEffect(() => {
     if (!onSearchQuery) return
@@ -70,35 +65,6 @@ export function ChatSidebar({
   const filteredThreads = threads.filter((thread) => !query.trim()
     || thread.title.toLowerCase().includes(query.trim().toLowerCase())
     || matchingThreadIds?.includes(thread.id))
-
-  const confirmRename = async (): Promise<void> => {
-    if (!renameTarget || !onRenameThread) return
-    setActionBusy(true)
-    setActionError('')
-    try {
-      await onRenameThread(renameTarget.thread, renameTarget.title)
-      setEditingId(null)
-      setRenameTarget(null)
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : 'Could not rename this chat.')
-    } finally {
-      setActionBusy(false)
-    }
-  }
-
-  const confirmDelete = async (): Promise<void> => {
-    if (!deleteTarget || !onDeleteThread) return
-    setActionBusy(true)
-    setActionError('')
-    try {
-      await onDeleteThread(deleteTarget)
-      setDeleteTarget(null)
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : 'Could not delete this chat.')
-    } finally {
-      setActionBusy(false)
-    }
-  }
 
   return (
     <>
@@ -137,10 +103,7 @@ export function ChatSidebar({
           </button>
           <button
             type="button"
-            onClick={() => setSearchOpen((value) => {
-              if (value) setQuery('')
-              return !value
-            })}
+            onClick={() => setSearchOpen((value) => !value)}
             className="flex h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm text-neutral-700 transition-colors hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-brand"
           >
             <IconSearch size={19} stroke={1.8} />
@@ -164,7 +127,7 @@ export function ChatSidebar({
             {filteredThreads.length ? filteredThreads.map((thread) => (
               <div key={thread.id} className={`group flex min-h-10 items-center rounded-xl pr-1 transition-colors ${activeThreadId === thread.id ? 'bg-neutral-100' : 'hover:bg-neutral-50'}`}>
                 {editingId === thread.id ? (
-                  <form className="flex min-w-0 flex-1 items-center gap-1 px-2" onSubmit={(event) => { event.preventDefault(); if (editTitle.trim()) { setActionError(''); setRenameTarget({ thread, title: editTitle.trim() }) } }}>
+                  <form className="flex min-w-0 flex-1 items-center gap-1 px-2" onSubmit={(event) => { event.preventDefault(); if (editTitle.trim()) onRenameThread?.(thread, editTitle.trim()); setEditingId(null) }}>
                     <input autoFocus aria-label="Rename chat" value={editTitle} onChange={(event) => setEditTitle(event.target.value)} className="h-8 min-w-0 flex-1 rounded-md border border-neutral-300 bg-white px-2 text-sm outline-none focus:border-brand" />
                     <button type="submit" aria-label="Save chat name" className="grid size-8 shrink-0 place-items-center rounded-lg text-brand-emphasis hover:bg-brand-wash"><IconCheck size={16} /></button>
                   </form>
@@ -181,7 +144,7 @@ export function ChatSidebar({
                 )}
                 {editingId !== thread.id && <div className="flex shrink-0 items-center opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
                   <button type="button" aria-label={`Rename ${thread.title}`} title="Rename" onClick={() => { setEditingId(thread.id); setEditTitle(thread.title) }} className="grid size-8 place-items-center rounded-lg text-neutral-500 hover:bg-white hover:text-brand-emphasis focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-brand"><IconPencil size={15} /></button>
-                  <button type="button" aria-label={`Delete ${thread.title}`} title="Delete" onClick={() => { setActionError(''); setDeleteTarget(thread) }} className="grid size-8 place-items-center rounded-lg text-neutral-500 hover:bg-white hover:text-error focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-brand"><IconTrash size={15} /></button>
+                  <button type="button" aria-label={`Delete ${thread.title}`} title="Delete" onClick={() => onDeleteThread?.(thread)} className="grid size-8 place-items-center rounded-lg text-neutral-500 hover:bg-white hover:text-error focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-brand"><IconTrash size={15} /></button>
                 </div>}
               </div>
             )) : (
@@ -220,29 +183,6 @@ export function ChatSidebar({
           </div>
         </div>
       </motion.aside>
-      <AnimatePresence>
-        {renameTarget && <ConfirmActionModal
-          key="rename-chat"
-          title="Rename this chat?"
-          description={`Save “${renameTarget.title}” as the conversation name.`}
-          confirmLabel="Save name"
-          busy={actionBusy}
-          error={actionError}
-          onCancel={() => { if (!actionBusy) setRenameTarget(null) }}
-          onConfirm={() => void confirmRename()}
-        />}
-        {deleteTarget && <ConfirmActionModal
-          key="delete-chat"
-          title="Delete this chat?"
-          description={`“${deleteTarget.title}” and all its messages will be removed.`}
-          confirmLabel="Delete chat"
-          intent="danger"
-          busy={actionBusy}
-          error={actionError}
-          onCancel={() => { if (!actionBusy) setDeleteTarget(null) }}
-          onConfirm={() => void confirmDelete()}
-        />}
-      </AnimatePresence>
     </>
   )
 }

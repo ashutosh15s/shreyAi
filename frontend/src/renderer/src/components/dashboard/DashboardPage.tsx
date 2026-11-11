@@ -13,7 +13,7 @@ import { ProfileModal } from '../profile/ProfileModal'
 
 type ApiEnvelope<T> = { success: boolean; message?: string; data: T }
 type ConversationRecord = ChatThread & { updatedAt?: string }
-type SavedMessage = { id: string; role: 'user' | 'assistant'; content: string; voiceScript?: string }
+type SavedMessage = { id: string; role: 'user' | 'assistant'; content: string; voiceScript?: string; toolsUsed?: string[] }
 type ChatApiResponse = { response: string; voice_script?: string; conversationId?: string; userMessageId?: string; assistantMessageId?: string; tools_executed?: string[] }
 
 const shortTitle = (message: string): string => message.replace(/\s+/g, ' ').slice(0, 42) || 'New chat'
@@ -75,8 +75,9 @@ export function DashboardPage({ initialProfileOpen = false }: { initialProfileOp
         role: message.role,
         content: message.content,
         voiceScript: message.voiceScript,
+        toolsExecuted: message.toolsUsed,
       })))
-    } catch {
+    } catch (error) {
       if (activeThreadRef.current === thread.id) {
         setMessages([{ id: `error-${Date.now()}`, role: 'assistant', content: getApiErrorMessage(error) }])
       }
@@ -170,7 +171,14 @@ export function DashboardPage({ initialProfileOpen = false }: { initialProfileOp
       }
       if (activeRequestRef.current === requestId && activeThreadRef.current === threadId) {
         setMessages((current) => current.map((message) => message.id === responseId
-          ? { ...message, id: data.assistantMessageId || message.id, content: answer, voiceScript, streaming: false }
+          ? {
+              ...message,
+              id: data.assistantMessageId || message.id,
+              content: answer,
+              voiceScript,
+              toolsExecuted: data.tools_executed || [],
+              streaming: false,
+            }
           : message))
         if (voiceMode) speak(voiceScript || answer)
       }
