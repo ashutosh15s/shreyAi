@@ -105,7 +105,10 @@ All 20 endpoints tested against MongoDB Atlas via automated test runner [`backen
   - **`RagPipeline`**: Text chunking, ONNX vector embedding, and ChromaDB similarity search.
 - [x] **Automated Test Suite ([`Ai/test_ai_endpoints.py`](file:///c:/Users/Dell/Desktop/projects/shrey_Ai/Ai/test_ai_endpoints.py)):**
   - Verified 100% passing across all 6 microservice routes: `GET /`, `GET /health`, `GET /ai/status`, `POST /ai/rag/ingest`, `POST /ai/rag/query`, and `POST /ai/chat`.
-  - Live query verified: Shrey AI correctly responded with creators **Aryan, Arpit, and Ashutosh**.
+  - Multi-provider live verification passed across all 3 providers:
+    - **Groq (`qwen/qwen3.8-27b`)**: Responds in < 2s, executes OS tools and honors system prompt.
+    - **OpenRouter (`openrouter/free`)**: Dynamic free routing, strictly honors Shrey AI identity and creators (**Aryan, Arpit, and Ashutosh**).
+    - **Gemini (`gemini-3.8-flash` / `gemini-3.5-flash-lite`)**: Normalized multimodal parts, returns clean text and TTS voice script.
   - Live tool execution verified: Agent autonomously executed `get_system_info` tool and returned live CPU, RAM, disk, and battery analysis.
 - [x] **Documentation Created ([`Ai/api.md`](file:///c:/Users/Dell/Desktop/projects/shrey_Ai/Ai/api.md)):** Complete microservice API reference, request/response models, and Axios TypeScript client.
 
