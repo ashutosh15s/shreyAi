@@ -109,3 +109,4 @@ class AuthServiceTest {
         assertThrows(BadCredentialsException.class, () -> authService.login(request, "127.0.0.1"));
     }
 }
+

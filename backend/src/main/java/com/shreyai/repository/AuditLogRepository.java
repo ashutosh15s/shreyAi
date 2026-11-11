@@ -17,3 +17,4 @@ public interface AuditLogRepository extends MongoRepository<AuditLog, String> {
 
     Page<AuditLog> findAllByOrderByTimestampDesc(Pageable pageable);
 }
+

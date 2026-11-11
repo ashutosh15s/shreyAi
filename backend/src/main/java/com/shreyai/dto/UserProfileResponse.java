@@ -83,3 +83,4 @@ public class UserProfileResponse {
         this.updatedAt = updatedAt;
     }
 }
+

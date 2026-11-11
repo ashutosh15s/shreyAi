@@ -47,3 +47,4 @@ public class AuditLogController {
         return ResponseEntity.ok(ApiResponse.success("All audit logs fetched successfully", logs));
     }
 }
+

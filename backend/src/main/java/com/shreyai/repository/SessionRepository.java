@@ -19,3 +19,4 @@ public interface SessionRepository extends MongoRepository<Session, String> {
 
     void deleteByUserId(String userId);
 }
+

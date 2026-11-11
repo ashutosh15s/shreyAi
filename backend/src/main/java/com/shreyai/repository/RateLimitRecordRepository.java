@@ -11,3 +11,4 @@ public interface RateLimitRecordRepository extends MongoRepository<RateLimitReco
 
     Optional<RateLimitRecord> findByUserIdAndProvider(String userId, String provider);
 }
+

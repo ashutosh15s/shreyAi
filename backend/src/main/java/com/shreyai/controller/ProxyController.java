@@ -62,3 +62,4 @@ public class ProxyController {
         return ResponseEntity.ok(ApiResponse.success("Gateway status operational", status));
     }
 }
+
